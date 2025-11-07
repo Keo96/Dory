@@ -6,7 +6,7 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch data from your FastAPI backend (make sure it's running!)
-    fetch("http://localhost:8000/")
+    fetch("https://dory-nuem.onrender.com")
       .then((res) => res.json())
       .then((data) => {
         setMessage(data.message);
