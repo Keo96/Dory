@@ -20,8 +20,8 @@ Example:
 * FastAPI
 * Hugging Face AI Models
 * Next.js
-* Java
-* ReactJS
+* Python
+* JavaScript
 
 ### Link to Demo Presentation 📽
 **...point us to your PPT or Canva slides 😍**
