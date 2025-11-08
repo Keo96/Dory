@@ -1,7 +1,7 @@
 'use client';
 import { MicrophoneIcon, ArrowUpTrayIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { usePersonalize } from '@/lib/personalizeStore';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { speak, stopSpeech, isSpeaking } from '@/lib/speech';
 
 export default function StudentPage() {
@@ -31,6 +31,34 @@ export default function StudentPage() {
     };
   }, []);
 
+  // ===== personalization-derived values =====
+  const bgColor = profile?.background?.color ?? null; // e.g. '#F7F3E8' or null
+  const dyslexiaOn = profile?.font === 'OpenDyslexic';
+  const motionOff = Boolean(profile?.reducedMotion);
+
+  // fontFamily (uses CSS vars injected by next/font.local or falls back to system)
+  const fontFamily = useMemo(() => {
+    return dyslexiaOn
+      ? 'var(--font-open-dyslexic), var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Roboto'
+      : 'var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", Roboto';
+  }, [dyslexiaOn]);
+
+  // page-level style: apply selected background if available
+  const pageStyle = useMemo(() => {
+    if (!bgColor) return undefined;
+    return { backgroundColor: bgColor };
+  }, [bgColor]);
+
+  // textarea/result inline style
+  const readerStyle = useMemo(() => ({
+    fontFamily,
+    // sensible defaults for dyslexia mode spacing
+    letterSpacing: dyslexiaOn ? '0.01em' : undefined,
+    lineHeight: dyslexiaOn ? 1.8 : 1.6,
+    color: '#111827',
+  }), [fontFamily, dyslexiaOn]);
+
+  // ===== networking / summarize logic (unchanged except pulse respect) =====
   const BACKEND_URL = process.env.NEXT_PUBLIC_SUMMARIZE_URL || '/api/summarize';
 
   const handleSummarize = async () => {
@@ -123,7 +151,6 @@ export default function StudentPage() {
     }
 
     setError('');
-    // speak will cancel any existing speech before speaking (per your speak impl)
     speak(
       text,
       () => {
@@ -165,24 +192,27 @@ export default function StudentPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    // apply the selected page background color (fallback to default CSS class)
+    <main className="min-h-screen" style={pageStyle}>
       <div className="max-w-3xl mx-auto px-6 py-12">
         {/* Input Card */}
         <div className="flex flex-col items-center">
           {/* Paste box + controls */}
           <div className="w-full max-w-2xl">
-            <div className="border rounded-md bg-white shadow-sm p-0">
+            {/* apply font to the container so controls/labels also reflect choice */}
+            <div className="border rounded-md bg-white shadow-sm p-0" style={{ fontFamily }}>
               {/* Controlled textarea */}
               <textarea
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
                 placeholder="Paste your content here"
-                className="w-full px-5 py-5 text-lg text-gray-800 placeholder:text-gray-400 focus:outline-none bg-transparent resize-y min-h-[140px]"
+                className="w-full px-5 py-5 text-lg placeholder:text-gray-400 focus:outline-none bg-transparent resize-y min-h-[140px]"
                 aria-label="Paste your content"
                 spellCheck={true}
+                style={readerStyle}
               />
 
-              {/* control row (visual only) */}
+              {/* control row */}
               <div className="flex items-center justify-between px-3 py-2 border-t">
                 <div className="flex items-center gap-3 text-gray-700">
                   {/* mic (visual) */}
@@ -201,7 +231,7 @@ export default function StudentPage() {
                   </button>
                 </div>
 
-                {/* Summarize button */}
+                {/* Summarize button (respect reduced-motion) */}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -212,7 +242,9 @@ export default function StudentPage() {
                     className={`inline-flex items-center gap-2 px-4 py-2 rounded-md shadow-sm focus:outline-none
                       ${canSummarize && !loading ? 'bg-doryblue text-white hover:brightness-95' : 'bg-white/40 text-gray-400 cursor-not-allowed'}`}
                   >
-                    <PaperAirplaneIcon className={`h-4 w-4 -rotate-45 ${loading ? 'animate-pulse' : ''}`} />
+                    <PaperAirplaneIcon
+                      className={`h-4 w-4 -rotate-45 ${(!motionOff && loading) ? 'animate-pulse' : ''}`}
+                    />
                     <span>{loading ? 'Working…' : 'Summarize'}</span>
                   </button>
                 </div>
@@ -221,12 +253,10 @@ export default function StudentPage() {
           </div>
 
           {/* Action buttons row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 w-full max-w-2xl mt-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 w-full max-w-2xl mt-8" style={{ fontFamily }}>
             <button
               type="button"
-              onClick={() => {
-                /* placeholder: call selfcheck with mode 'selfcheck' later */
-              }}
+              onClick={() => { /* placeholder */ }}
               className="mx-auto px-4 py-2 rounded-lg bg-doryblue text-white shadow-sm hover:opacity-90"
               aria-label="Self Check (not wired)"
             >
@@ -235,9 +265,7 @@ export default function StudentPage() {
 
             <button
               type="button"
-              onClick={() => {
-                /* placeholder: call visualize with mode 'visualize' later */
-              }}
+              onClick={() => { /* placeholder */ }}
               className="mx-auto px-4 py-2 rounded-lg bg-doryblue text-white shadow-sm hover:opacity-90"
               aria-label="Visualize (not wired)"
             >
@@ -274,7 +302,7 @@ export default function StudentPage() {
             )}
 
             {result ? (
-              <div className="rounded-md bg-white shadow-sm p-5 border">
+              <div className="rounded-md bg-white shadow-sm p-5 border" style={{ fontFamily }}>
                 {result.gist && result.gist.length > 0 && (
                   <div className="mb-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Key points</h3>
@@ -289,7 +317,7 @@ export default function StudentPage() {
                 {result.simplified_text && (
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Simplified text</h3>
-                    <div className="rounded-md bg-gray-50 p-4 text-gray-800 whitespace-pre-wrap">
+                    <div className="rounded-md bg-gray-50 p-4 text-gray-800 whitespace-pre-wrap" style={readerStyle}>
                       {result.simplified_text}
                     </div>
                   </div>
