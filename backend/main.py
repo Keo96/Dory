@@ -12,12 +12,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+"""CORS settings to allow our frontend to access the backend API."""
+
 origins = [
     "http://localhost:3000",  
     "http://localhost",
     "https://dory-beige.vercel.app"
 ]
 
+"""Add the CORS middleware to the FastAPI app."""
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins, 
@@ -35,14 +38,9 @@ def read_root():
 @app.post("/api/summarize", response_model=TranslateResponse)
 async def translate_text(request: TranslateRequest):
     """
-    This is our single, smart endpoint that routes to the
-    correct AI prompt based on the 'mode' parameter.
-    
-    This function is a "router" that calls the
-    correct function from ai/ai_services.py
+    This is our  endpoint that routes to the correct AI prompt based on the 'mode' parameter.
     """
     
-    # This is our "a-la-carte" logic
     if request.mode == "summary":
         return await get_ai_summary(request.profile, request.text)
 

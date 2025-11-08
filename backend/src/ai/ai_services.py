@@ -10,24 +10,16 @@ from typing import List, Dict, Any
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Import our main data models
 from src.models.request_models import Profile
 from src.models.response_models import TranslateResponse, Question
 
-# --- 1. Configure the Gemini Client ---
-# This securely loads your key from the .env file
 _api_key = os.environ.get("GOOGLE_API_KEY")
 
-# Instantiate client; SDK will also read GEMINI_API_KEY automatically if not passed.
-# Passing api_key explicitly is safe if you have it in env.
 if _api_key:
     client = genai.Client(api_key=_api_key)
 else:
     client = genai.Client()
 
-# --- 2. Define AI-Specific Schemas ---
-# These are the Pydantic models we will force the AI to return.
-# This makes parsing 100% reliable.
 
 class SummarySchema(BaseModel):
     """The JSON schema for a 'summary' request."""
@@ -53,7 +45,7 @@ class SelfCheckSchema(BaseModel):
 # --- 3. Define the "Mega-Prompts" ---
 
 def get_summary_prompt(profile: Profile, text: str) -> str:
-    """Generates the 'Persona' + 'Implicit Tone' prompt."""
+    """Generates the 'Comprehensive / Simplified' summary prompt."""
     return f"""
     You are an expert tutor. A student with the profile {profile.learningNeed}
     at a {profile.gradeLevel} grade level needs help understanding a text.
@@ -72,7 +64,7 @@ def get_summary_prompt(profile: Profile, text: str) -> str:
     """
 
 def get_visualize_prompt(profile: Profile, text: str) -> str:
-    """Generates the 'Strictly Constrained' visual prompt."""
+    """Generates the visual prompt."""
     return f"""
     You are an expert learning designer. A student at a {profile.gradeLevel}
     level needs a visual for the following text.
@@ -136,8 +128,6 @@ async def get_ai_summary(profile: Profile, text: str) -> TranslateResponse:
     
     prompt = get_summary_prompt(profile, text)
     
-    # Use client.models.generate_content_async
-    # and the 'config' parameter, per the documentation
     response = await _generate_content_in_thread(
         model_name="gemini-2.5-flash",
         prompt=prompt,
