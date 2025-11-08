@@ -1,32 +1,37 @@
 'use client';
-import {MicrophoneIcon, ArrowUpTrayIcon, PaperAirplaneIcon} from '@heroicons/react/24/outline';
-import {usePersonalize} from '@/lib/personalizeStore';
-import {useEffect, useRef, useState} from 'react';
+import { MicrophoneIcon, ArrowUpTrayIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { usePersonalize } from '@/lib/personalizeStore';
+import { useEffect, useRef, useState } from 'react';
+import { speak, stopSpeech, isSpeaking } from '@/lib/speech';
 
 export default function StudentPage() {
-
-  const { draftText, setDraftText } = usePersonalize();
+  const { draftText, setDraftText, profile } = usePersonalize();
 
   const trimmed = (draftText || '').trim();
-
   const canSummarize = Boolean(trimmed);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
 
+  // speaking state (local UI booleans)
+  const [speakingOriginal, setSpeakingOriginal] = useState(false);
+  const [speakingSummary, setSpeakingSummary] = useState(false);
+
   const controllerRef = useRef(null);
 
   useEffect(() => {
     return () => {
+      // cleanup on unmount
       if (controllerRef.current) {
         controllerRef.current.abort();
         controllerRef.current = null;
       }
+      stopSpeech();
     };
   }, []);
 
-    const BACKEND_URL = process.env.NEXT_PUBLIC_SUMMARIZE_URL || '/api/summarize';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_SUMMARIZE_URL || '/api/summarize';
 
   const handleSummarize = async () => {
     if (controllerRef.current) {
@@ -63,7 +68,13 @@ export default function StudentPage() {
       controllerRef.current = null;
 
       if (!res.ok) {
-        const bodyText = await res.text().catch(() => '');
+        let bodyText = '';
+        try {
+          const jsonErr = await res.json();
+          bodyText = jsonErr?.detail || JSON.stringify(jsonErr);
+        } catch {
+          bodyText = await res.text().catch(() => '');
+        }
         throw new Error(`Server ${res.status}${bodyText ? `: ${bodyText}` : ''}`);
       }
 
@@ -95,16 +106,73 @@ export default function StudentPage() {
     }
   };
 
+  // Speak the original text (draftText)
+  const handleReadOriginal = () => {
+    const text = (draftText || '').trim();
+    if (!text) {
+      setError('Nothing to read. Paste or type some text first.');
+      return;
+    }
+
+    // If already speaking, stop everything
+    if (isSpeaking()) {
+      stopSpeech();
+      setSpeakingOriginal(false);
+      setSpeakingSummary(false);
+      return;
+    }
+
+    setError('');
+    // speak will cancel any existing speech before speaking (per your speak impl)
+    speak(
+      text,
+      () => {
+        setSpeakingOriginal(true);
+        setSpeakingSummary(false);
+      },
+      () => {
+        setSpeakingOriginal(false);
+      }
+    );
+  };
+
+  // Speak the simplified summary (result)
+  const handleReadSummary = () => {
+    const text = result?.simplified_text || result?.summary || '';
+    if (!text || !text.trim()) {
+      setError('No summary to read. Generate a summary first.');
+      return;
+    }
+
+    if (isSpeaking()) {
+      stopSpeech();
+      setSpeakingOriginal(false);
+      setSpeakingSummary(false);
+      return;
+    }
+
+    setError('');
+    speak(
+      text,
+      () => {
+        setSpeakingSummary(true);
+        setSpeakingOriginal(false);
+      },
+      () => {
+        setSpeakingSummary(false);
+      }
+    );
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
-
       <div className="max-w-3xl mx-auto px-6 py-12">
         {/* Input Card */}
         <div className="flex flex-col items-center">
           {/* Paste box + controls */}
           <div className="w-full max-w-2xl">
             <div className="border rounded-md bg-white shadow-sm p-0">
-              {/* Editable textarea (uncontrolled) */}
+              {/* Controlled textarea */}
               <textarea
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
@@ -118,25 +186,24 @@ export default function StudentPage() {
               <div className="flex items-center justify-between px-3 py-2 border-t">
                 <div className="flex items-center gap-3 text-gray-700">
                   {/* mic (visual) */}
-                    <button className="text-gray-700 p-2">
+                  <button className="text-gray-700 p-2" title="Voice (disabled)">
                     <MicrophoneIcon className="h-5 w-5" />
-                    </button>
+                  </button>
 
                   {/* upload (visual) */}
-                    <button
-                        type="button"
-                        aria-label="Upload"
-                        title="Upload"
-                        className="text-gray-700 p-2 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-doryblue"
-                    >
-                        <ArrowUpTrayIcon className="h-5 w-5" />
-                    </button>
+                  <button
+                    type="button"
+                    aria-label="Upload"
+                    title="Upload"
+                    className="text-gray-700 p-2 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-doryblue"
+                  >
+                    <ArrowUpTrayIcon className="h-5 w-5" />
+                  </button>
                 </div>
 
-                {/* Summarize (visual only) */}
-                {/* Wire an onClick here later to call your summarization API */}
+                {/* Summarize button */}
                 <div className="flex items-center gap-2">
-                    <button
+                  <button
                     type="button"
                     aria-label="Summarize content"
                     title="Summarize"
@@ -153,10 +220,13 @@ export default function StudentPage() {
             </div>
           </div>
 
-          {/* Action buttons row (always below the textarea) */}
+          {/* Action buttons row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 w-full max-w-2xl mt-8">
             <button
               type="button"
+              onClick={() => {
+                /* placeholder: call selfcheck with mode 'selfcheck' later */
+              }}
               className="mx-auto px-4 py-2 rounded-lg bg-doryblue text-white shadow-sm hover:opacity-90"
               aria-label="Self Check (not wired)"
             >
@@ -165,6 +235,9 @@ export default function StudentPage() {
 
             <button
               type="button"
+              onClick={() => {
+                /* placeholder: call visualize with mode 'visualize' later */
+              }}
               className="mx-auto px-4 py-2 rounded-lg bg-doryblue text-white shadow-sm hover:opacity-90"
               aria-label="Visualize (not wired)"
             >
@@ -173,18 +246,23 @@ export default function StudentPage() {
 
             <button
               type="button"
-              className="mx-auto px-4 py-2 rounded-lg bg-doryblue text-white shadow-sm hover:opacity-90"
-              aria-label="Read Original (not wired)"
+              onClick={handleReadOriginal}
+              className={`mx-auto px-4 py-2 rounded-lg ${speakingOriginal ? 'bg-red-100 text-red-800' : 'bg-doryblue text-white'} shadow-sm hover:opacity-90`}
+              aria-label="Read Original"
+              title={speakingOriginal ? 'Stop reading' : 'Read original text aloud'}
             >
-              Read Original
+              {speakingOriginal ? 'Stop' : 'Read Original'}
             </button>
 
             <button
               type="button"
-              className="mx-auto px-4 py-2 rounded-lg bg-doryblue text-white shadow-sm hover:opacity-90"
-              aria-label="Read Summary (not wired)"
+              onClick={handleReadSummary}
+              disabled={!result}
+              className={`mx-auto px-4 py-2 rounded-lg ${speakingSummary ? 'bg-red-100 text-red-800' : 'bg-doryblue text-white'} shadow-sm hover:opacity-90 ${!result ? 'opacity-60 cursor-not-allowed' : ''}`}
+              aria-label="Read Summary"
+              title={speakingSummary ? 'Stop reading' : 'Read summary aloud'}
             >
-              Read Summary
+              {speakingSummary ? 'Stop' : 'Read Summary'}
             </button>
           </div>
 
