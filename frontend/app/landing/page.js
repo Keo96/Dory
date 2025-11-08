@@ -9,14 +9,12 @@ import StatsStrip from "@/components/landing/StatsStrip";
 import Cta from "@/components/landing/Cta";
 import MarketingFooter from "@/components/landing/MarketingFooter";
 
-export default function Home() {
-  // Backend status check removed (StatusBar was used for testing).
+export default function LandingPage() {
+  // StatusBar and backend check removed (it was used for a quick integration test).
 
   return (
     <div className="bg-gray-50">
-           <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* StatusBar removed */}
-      </div>
+      <div className="max-w-6xl mx-auto px-6 py-6">{/* StatusBar removed */}</div>
 
       <Hero />
 

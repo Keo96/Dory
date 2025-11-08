@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
+import Image from "next/image";
 
 const openDyslexic = localFont({
   src: [
@@ -39,7 +40,17 @@ export default function RootLayout({ children }) {
       >
         <header className="bg-white border-b shadow-sm">
           <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-2 justify-start">
-            <span className="text-2xl leading-none">🐟</span>
+            {/* <span className="text-2xl leading-none">🐟</span> */}
+            <span className="text-2xl leading-none">
+            <Image
+              src="/dory.jpg" 
+              alt="Dory Logo" 
+              width={24}
+              height={24}
+              className="inline-block align-middle"
+            />
+          </span>
+
             <h1 className="font-semibold text-xl text-gray-900 tracking-tight">
               Dory
             </h1>
