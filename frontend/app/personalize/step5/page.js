@@ -124,8 +124,7 @@ export default function Step5() {
                 type="button"
                 onClick={() => {
                   stopSpeech();
-                  // TODO: route to your main reading page
-                  router.push('/student'); // or '/read'
+                  router.push('/test-audio');
                 }}
                 className="px-5 py-2 rounded-lg font-medium bg-white text-blue-700 hover:bg-gray-100"
               >

@@ -137,3 +137,81 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+# ### General Python ###
+# Bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments (venv, env, .venv, etc.)
+venv/
+env/
+.venv/
+.env/
+*env/
+
+# Build artifacts and packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.tar.gz
+*.whl
+pip-wheel-metadata/
+
+# ### Frameworks & Libraries (FastAPI) ###
+# Secrets and local configuration files
+# IMPORTANT: Never commit your .env file with real secrets!
+.env
+*.env.local
+*.local
+
+# Allow example environment files to be tracked
+# This is a common pattern for FastAPI projects
+!.env.example
+
+# Local databases (e.g., development SQLite)
+*.db
+*.sqlite3
+
+# ### Development Tools ###
+# IDE / Editor configuration
+.idea/          # PyCharm
+*.swp
+*.swo
+
+# VSCode (optional: some teams commit .vscode/settings.json)
+.vscode/
+
+# Testing
+.pytest_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+
+# Linters & Formatters
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# ### Operating System Files ###
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ### Logs ###
+*.log
+logs/
