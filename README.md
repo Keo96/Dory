@@ -48,8 +48,8 @@ Unlike traditional accessibility tools, Dory emphasizes **real-time audio intera
 - Next.js  
 - JavaScript  
 - TailwindCSS  
-- Hugging Face NLP API  
-- Firebase  
+- Gemini Studios AI  
+- Zustand  
 
 ---
 
