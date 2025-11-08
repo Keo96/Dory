@@ -37,8 +37,8 @@ export default function Step5() {
     backgroundColor: bg,
     color: '#111827',
     fontFamily: dyslexiaOn
-      ? 'var(--font-open-dyslexic), var(--font-sans), system-ui'
-      : 'var(--font-sans), system-ui',
+      ? 'var(--font-open-dyslexic), var(--font-geist-sans), system-ui'
+      : 'var(--font-geist-sans), system-ui',
     letterSpacing: dyslexiaOn ? '0.02em' : undefined,
     lineHeight: dyslexiaOn ? 1.9 : 1.7,
   }), [bg, dyslexiaOn]);
